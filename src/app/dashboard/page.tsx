@@ -5,12 +5,22 @@ import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 import "./dashboard.css";
 
+interface Student {
+  id: string;
+  name: string;
+  class_id: string;
+}
+
+interface Class {
+  id: string;
+  name: string;
+}
+
 export default function DashboardPage() {
-  const [students, setStudents] = useState<any[]>([]); // Can replace with interface
-  const [classes, setClasses] = useState<any[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+  const [classes, setClasses] = useState<Class[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
   const [newStudent, setNewStudent] = useState("");
-  const [_userId, setUserId] = useState<string | null>(null); // Used underscore to suppress warning
   const [ownClassId, setOwnClassId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editedName, setEditedName] = useState("");
@@ -43,7 +53,7 @@ export default function DashboardPage() {
       }
 
       const user = session.user;
-      setUserId(user.id); // Even though unused, now won’t trigger ESLint error
+      // Even though unused, now won’t trigger ESLint error
 
       const { data: teacherData, error: teacherError } = await supabase
         .from("teachers")
