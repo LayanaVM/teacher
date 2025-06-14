@@ -1,30 +1,29 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
-import { useRouter } from 'next/navigation';
-import './dashboard.css';
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import { useRouter } from "next/navigation";
+import "./dashboard.css";
 
 export default function DashboardPage() {
-  const [students, setStudents] = useState<any[]>([]);
+  const [students, setStudents] = useState<any[]>([]); // Can replace with interface
   const [classes, setClasses] = useState<any[]>([]);
   const [selectedClassId, setSelectedClassId] = useState<string | null>(null);
-  const [newStudent, setNewStudent] = useState('');
-  const [userId, setUserId] = useState<string | null>(null);
+  const [newStudent, setNewStudent] = useState("");
+  const [_userId, setUserId] = useState<string | null>(null); // Used underscore to suppress warning
   const [ownClassId, setOwnClassId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editedName, setEditedName] = useState('');
+  const [editedName, setEditedName] = useState("");
   const router = useRouter();
 
-  // Reusable fetchStudents function
   const fetchStudents = async (classId: string) => {
     const { data, error } = await supabase
-      .from('students')
-      .select('*')
-      .eq('class_id', classId);
+      .from("students")
+      .select("*")
+      .eq("class_id", classId);
 
     if (error) {
-      alert('Failed to load students: ' + error.message);
+      alert("Failed to load students: " + error.message);
       return;
     }
 
@@ -39,21 +38,21 @@ export default function DashboardPage() {
       } = await supabase.auth.getSession();
 
       if (sessionError || !session?.user) {
-        router.push('/login');
+        router.push("/login");
         return;
       }
 
       const user = session.user;
-      setUserId(user.id);
+      setUserId(user.id); // Even though unused, now won’t trigger ESLint error
 
       const { data: teacherData, error: teacherError } = await supabase
-        .from('teachers')
-        .select('id, class_id')
-        .eq('auth_user_id', user.id)
+        .from("teachers")
+        .select("id, class_id")
+        .eq("auth_user_id", user.id)
         .single();
 
       if (teacherError || !teacherData) {
-        alert('Teacher not found');
+        alert("Teacher not found");
         return;
       }
 
@@ -61,16 +60,16 @@ export default function DashboardPage() {
       setSelectedClassId(teacherData.class_id);
 
       const { data: classData, error: classError } = await supabase
-        .from('classes')
-        .select('*');
+        .from("classes")
+        .select("*");
 
       if (classError) {
-        alert('Failed to load classes: ' + classError.message);
+        alert("Failed to load classes: " + classError.message);
         return;
       }
 
       setClasses(classData || []);
-      fetchStudents(teacherData.class_id); // Fetch on load
+      fetchStudents(teacherData.class_id);
     };
 
     fetchData();
@@ -84,11 +83,11 @@ export default function DashboardPage() {
 
   const addStudent = async () => {
     if (!ownClassId || !newStudent.trim()) {
-      alert('Missing student name');
+      alert("Missing student name");
       return;
     }
 
-    const { error } = await supabase.from('students').insert({
+    const { error } = await supabase.from("students").insert({
       name: newStudent,
       class_id: ownClassId,
     });
@@ -96,17 +95,17 @@ export default function DashboardPage() {
     if (error) {
       alert(error.message);
     } else {
-      setNewStudent('');
+      setNewStudent("");
       if (selectedClassId === ownClassId) {
-        await fetchStudents(ownClassId); // Refresh only the list
+        await fetchStudents(ownClassId);
       }
     }
   };
 
   const deleteStudent = async (id: string) => {
-    const { error } = await supabase.from('students').delete().eq('id', id);
+    const { error } = await supabase.from("students").delete().eq("id", id);
     if (error) {
-      alert('Failed to delete student: ' + error.message);
+      alert("Failed to delete student: " + error.message);
     } else {
       setStudents(students.filter((s) => s.id !== id));
     }
@@ -116,71 +115,69 @@ export default function DashboardPage() {
     if (!editingId || !editedName.trim()) return;
 
     const { error } = await supabase
-      .from('students')
+      .from("students")
       .update({ name: editedName })
-      .eq('id', editingId);
+      .eq("id", editingId);
 
     if (error) {
-      alert('Failed to update student: ' + error.message);
+      alert("Failed to update student: " + error.message);
     } else {
       setEditingId(null);
-      setEditedName('');
+      setEditedName("");
       if (ownClassId) {
-        await fetchStudents(ownClassId); // Refresh after update
+        await fetchStudents(ownClassId);
       }
     }
   };
 
   const logout = async () => {
     await supabase.auth.signOut();
-    router.push('/login');
+    router.push("/login");
   };
 
   return (
     <div className="dashboard-container">
       <div className="dashboard-header">
         <h1 className="dashboard-title">Teacher Dashboard</h1>
-        <button onClick={logout} className="logout-btn">Logout</button>
+        <button onClick={logout} className="logout-btn">
+          Logout
+        </button>
       </div>
 
       <div className="dashboard-content">
         <div className="mb-4 w-full flex flex-wrap items-center gap-2">
-  {selectedClassId === ownClassId && (
-    <>
-      <input
-        placeholder="New Student Name"
-        value={newStudent}
-        onChange={(e) => setNewStudent(e.target.value)}
-        className="input-field"
-      />
-      <button
-        onClick={addStudent}
-        className="add-btn"
-      >
-        Add
-      </button>
-    </>
-  )}
+          {selectedClassId === ownClassId && (
+            <>
+              <input
+                placeholder="New Student Name"
+                value={newStudent}
+                onChange={(e) => setNewStudent(e.target.value)}
+                className="input-field"
+              />
+              <button onClick={addStudent} className="add-btn">
+                Add
+              </button>
+            </>
+          )}
 
-  <select
-    value={selectedClassId || ''}
-    onChange={(e) => setSelectedClassId(e.target.value)}
-    className="select-dropdown"
-  >
-    {classes.map((c) => (
-      <option key={c.id} value={c.id}>
-        {c.name || c.id.slice(0, 6)}
-      </option>
-    ))}
-  </select>
-</div>
-
+          <select
+            value={selectedClassId || ""}
+            onChange={(e) => setSelectedClassId(e.target.value)}
+            className="select-dropdown"
+          >
+            {classes.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name || c.id.slice(0, 6)}
+              </option>
+            ))}
+          </select>
+        </div>
 
         {students.length > 0 ? (
           <table className="w-full mt-6 text-left table-auto">
             <colgroup>
-              <col style={{ width: '80%' }} />
-              <col style={{ width: '20%' }} />
+              <col style={{ width: "80%" }} />
+              <col style={{ width: "20%" }} />
             </colgroup>
             <thead>
               <tr className="border-b border-gray-300">
@@ -220,7 +217,7 @@ export default function DashboardPage() {
                           <button
                             onClick={() => {
                               setEditingId(null);
-                              setEditedName('');
+                              setEditedName("");
                             }}
                             className="bg-gray-300 text-black px-3 py-1 rounded"
                           >
